@@ -15,15 +15,18 @@ if [[ "$choose_autoscaler" =~ ^[Kk]$ ]]; then
         read -p "Which instance type do you want to use in your Spark job? Type [C] for Compute, [R]for Memory, [G] for Graviton: " choose_karpenter_compute
         case $choose_karpenter_compute in
             "C") echo "You chose to run job using Karpenter using NVMe on $choose_karpenter_compute instance type" 
-                cd "nvme-ssd/karpenter-compute-provisioner/"
+                WORK_DIR="nvme-ssd/karpenter-compute-provisioner/"
+                cd $WORK_DIR            
                 ./execute_emr_eks_job.sh
                 ;;
             "R") echo "You chose to run job using Karpenter using NVMe on $choose_karpenter_compute instance type" 
-                cd "nvme-ssd/karpenter-memory-provisioner/"
+                WORK_DIR="nvme-ssd/karpenter-memory-provisioner/"
+                cd $WORK_DIR
                 ./execute_emr_eks_job.sh
                 ;;      
             "G") echo "You chose to run job using Karpenter using NVMe on $choose_karpenter_compute instance type" 
-                cd "nvme-ssd/karpenter-graviton-memory-provisioner/"
+                WORK_DIR="nvme-ssd/karpenter-graviton-memory-provisioner/"
+                cd $WORK_DIR
                 ./execute_emr_eks_job.sh
                 ;;
         esac
@@ -32,7 +35,8 @@ if [[ "$choose_autoscaler" =~ ^[Kk]$ ]]; then
         read -p "Which instance type do you want to use in your Spark job? Type [C] for Compute, [R]for Memory, [G] for Graviton: " choose_karpenter_compute
         case $choose_karpenter_compute in
             "C") echo "You chose to run job using Karpenter using EBS on $choose_karpenter_compute instance type" 
-                cd "ebs-pvc/karpenter-compute-provisioner-ebs/"
+                WORK_DIR="ebs-pvc/karpenter-compute-provisioner-ebs/"
+                cd $WORK_DIR
                 ./execute_emr_eks_job.sh
                 ;;
             "R") echo "You chose to run job using Karpenter using EBS on $choose_karpenter_compute instance type" 
@@ -73,13 +77,13 @@ if [[ "$choose_autoscaler" =~ ^[Kk]$ ]]; then
 elif [[ "$choose_autoscaler" =~ ^[Cc]$ ]]; then
   echo "Switching to Cluster Autoscaler examples. We have examples for different storage types (NVMe SSD, EBS, FSX for Lustre) and different instance types (compute-optimized, memory-optimized, graviton-optimized)"
   read -p "Which storage type do you want to use in your Spark job? Type [N] for NVMe, [E] for EBS, [F] for FSx for Lustre: " choose_ca_storage
-
   case $choose_ca_storage in
     "N")echo "Switching to NVMe storage type example"
         read -p "Which instance type do you want to use in your Spark job? Type [C] for Compute, [R]for Memory, [G] for Graviton: " choose_ca_compute
         case $choose_ca_compute in
             "C") echo "You chose to run job using ClusterAutoscaler using NVMe on $choose_ca_compute instance type" 
-                cd "cluster-autoscaler/nvme-ssd/cluster-autoscaler-compute-optimized/"
+                WORK_DIR="cluster-autoscaler/nvme-ssd/cluster-autoscaler-compute-optimized/"
+                cd $WORK_DIR
                 ./execute_emr_eks_job.sh
                 ;;
             "R") echo "You chose to run job using ClusterAutoscaler using NVMe on $choose_ca_compute instance type" 
@@ -98,7 +102,8 @@ elif [[ "$choose_autoscaler" =~ ^[Cc]$ ]]; then
         read -p "Which instance type do you want to use in your Spark job? Type [C] for Compute, [R]for Memory, [G] for Graviton: " choose_ca_compute
         case $choose_ca_compute in
             "C") echo "You chose to run job using ClusterAutoscaler using EBS on $choose_ca_compute instance type" 
-                cd "cluster-autoscaler/ebs-pvc/cluster-autoscaler-compute-optimized/"
+                WORK_DIR="cluster-autoscaler/ebs-pvc/cluster-autoscaler-compute-optimized/"
+                cd $WORK_DIR
                 ./execute_emr_eks_job.sh
                 ;;
             "R") echo "You chose to run job using ClusterAutoscaler using EBS on $choose_ca_compute instance type" 

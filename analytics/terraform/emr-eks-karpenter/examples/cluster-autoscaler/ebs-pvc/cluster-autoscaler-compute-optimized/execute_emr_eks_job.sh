@@ -1,6 +1,8 @@
 #!/bin/bash
 
-read -p "Enter EMR Virtual Cluster AWS Region: " AWS_REGION
+# NOTE: Make sure to set the region before running the shell script e.g., export AWS_REGION="<your-region>"
+
+read -p "Enter the AWS Region: " AWS_REGION
 read -p "Enter the EMR Virtual Cluster ID: " EMR_VIRTUAL_CLUSTER_ID
 read -p "Enter the EMR Execution Role ARN: " EMR_EXECUTION_ROLE_ARN
 read -p "Enter the CloudWatch Log Group name: " CLOUDWATCH_LOG_GROUP
@@ -27,24 +29,30 @@ aws s3 sync "./" ${SCRIPTS_S3_PATH}
 # https://registry.opendata.aws/nyc-tlc-trip-records-pds/
 #--------------------------------------------
 
-mkdir -p "../input"
-# Download the input data from public data set to local folders
-wget https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2022-01.parquet -O "../input/yellow_tripdata_2022-0.parquet"
+# mkdir -p "../input"
+# # Download the input data from public data set to local folders
+# wget https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2022-01.parquet -O "../input/yellow_tripdata_2022-0.parquet"
 
-# Making duplicate copies to increase the size of the data.
-max=10
-for (( i=1; i <= $max; ++i ))
-do
-    cp -rf "../input/yellow_tripdata_2022-0.parquet" "../input/yellow_tripdata_2022-${i}.parquet"
-done
+# # Making duplicate copies to increase the size of the data.
+# max=20
+# for (( i=1; i <= $max; ++i ))
+# do
+#     cp -rf "../input/yellow_tripdata_2022-0.parquet" "../input/yellow_tripdata_2022-${i}.parquet"
+# done
 
-aws s3 sync "../input" ${INPUT_DATA_S3_PATH} # Sync from local folder to S3 path
+# aws s3 sync "../input" ${INPUT_DATA_S3_PATH} # Sync from local folder to S3 path
 
-rm -rf "../input" # delete local input folder
+# rm -rf "../input" # delete local input folder
+
+#--------------------------------------------
+# Deploy EBS Storage Class and PersistentVolumeClaim for Driver before running the job
+#--------------------------------------------
+kubectl apply -f ebs-storageclass-pvc.yaml
 
 #--------------------------------------------
 # Execute Spark job
 #--------------------------------------------
+
 aws emr-containers start-job-run \
   --virtual-cluster-id $EMR_VIRTUAL_CLUSTER_ID \
   --name $JOB_NAME \
@@ -57,7 +65,7 @@ aws emr-containers start-job-run \
       "entryPointArguments": ["'"$INPUT_DATA_S3_PATH"'",
         "'"$OUTPUT_DATA_S3_PATH"'"
       ],
-      "sparkSubmitParameters": "--conf spark.executor.instances=2"
+      "sparkSubmitParameters": "--conf spark.executor.instances=6"
     }
   }' \
   --configuration-overrides '{
@@ -71,23 +79,18 @@ aws emr-containers start-job-run \
             "spark.executor.memory": "4g",
             "spark.kubernetes.driver.podTemplateFile":"'"$SCRIPTS_S3_PATH"'/driver-pod-template.yaml",
             "spark.kubernetes.executor.podTemplateFile":"'"$SCRIPTS_S3_PATH"'/executor-pod-template.yaml",
-            "spark.local.dir":"/data",
+            "spark.local.dir":"/data1,/data2",
 
             "spark.kubernetes.executor.podNamePrefix":"'"$JOB_NAME"'",
-            "spark.kubernetes.driver.volumes.persistentVolumeClaim.data.options.claimName": "OnDemand",
-            "spark.kubernetes.driver.volumes.persistentVolumeClaim.data.options.storageClass": "emr-eks-karpenter-ebs-sc",
-            "spark.kubernetes.driver.volumes.persistentVolumeClaim.data.options.sizeLimit": "50Gi",            
+            "spark.kubernetes.driver.volumes.persistentVolumeClaim.data.options.claimName": "spark-driver-pvc",
             "spark.kubernetes.driver.volumes.persistentVolumeClaim.data.mount.readOnly": "false",
             "spark.kubernetes.driver.volumes.persistentVolumeClaim.data.mount.path": "/data",
 
-            "spark.kubernetes.executor.volumes.persistentVolumeClaim.spark-local-dir-1.options.claimName": "OnDemand",
-            "spark.kubernetes.executor.volumes.persistentVolumeClaim.spark-local-dir-1.options.storageClass": "emr-eks-karpenter-ebs-sc",
-            "spark.kubernetes.executor.volumes.persistentVolumeClaim.spark-local-dir-1.options.sizeLimit": "50Gi",
-            "spark.kubernetes.executor.volumes.persistentVolumeClaim.spark-local-dir-1.mount.path": "/var/data/spill",
-            "spark.kubernetes.executor.volumes.persistentVolumeClaim.spark-local-dir-1.mount.readOnly": "false",
-
-            "spark.kubernetes.driver.ownPersistentVolumeClaim": "true",
-            "spark.kubernetes.driver.reusePersistentVolumeClaim": "true",
+            "spark.kubernetes.executor.volumes.persistentVolumeClaim.data.options.claimName": "OnDemand",
+            "spark.kubernetes.executor.volumes.persistentVolumeClaim.data.options.storageClass": "emr-eks-karpenter-ebs-sc",
+            "spark.kubernetes.executor.volumes.persistentVolumeClaim.data.options.sizeLimit": "50Gi",
+            "spark.kubernetes.executor.volumes.persistentVolumeClaim.data.mount.path": "/data",
+            "spark.kubernetes.executor.volumes.persistentVolumeClaim.data.mount.readOnly": "false",
 
             "spark.ui.prometheus.enabled":"true",
             "spark.executor.processTreeMetrics.enabled":"true",
@@ -109,9 +112,6 @@ aws emr-containers start-job-run \
       "cloudWatchMonitoringConfiguration": {
         "logGroupName":"'"$CLOUDWATCH_LOG_GROUP"'",
         "logStreamNamePrefix":"'"$JOB_NAME"'"
-      },
-      "s3MonitoringConfiguration": {
-        "logUri":"'"${S3_BUCKET}/logs/"'"
       }
     }
   }'

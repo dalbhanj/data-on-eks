@@ -153,6 +153,7 @@ module "eks" {
       tags = {
         Name                     = "core-node-grp",
         "karpenter.sh/discovery" = local.name
+        "cluster-autoscaler.kubernetes.io/safe-to-evict" = "false"        
       }
     },
     #spark_node_group = var.enable_spark_node_group ? {
@@ -218,7 +219,7 @@ module "eks" {
         desired_size = 0
 
         force_update_version = true
-        instance_types       = ["c5d.2xlarge"]
+        instance_types       = ["c5d.2xlarge","c5ad.2xlarge","c6id.2xlarge"]
 
         ebs_optimized = true
         block_device_mappings = {
@@ -311,7 +312,7 @@ module "eks" {
         desired_size = 0
 
         force_update_version = true
-        instance_types       = ["c5d.2xlarge"]
+        instance_types       = ["c5d.2xlarge","c5ad.2xlarge","c6id.2xlarge"]
         capacity_type  = "SPOT"
 
         ebs_optimized = true
