@@ -11,7 +11,7 @@ spec:
         type: Directory
 
   nodeSelector:
-    NodeGroupType: "spark-ca-od-ng"
+    NodeGroupType: "spark-gramem-od-ng"
     topology.kubernetes.io/zone: "us-west-2a"
 
   containers:
