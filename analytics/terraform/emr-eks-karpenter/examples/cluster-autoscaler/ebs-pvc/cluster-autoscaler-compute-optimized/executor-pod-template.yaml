@@ -5,8 +5,8 @@ metadata:
   namespace: emr-data-team-a
 spec:
   nodeSelector:
-    "NodeGroupType": "spark-ca-spot-ng"
-    # "topology.kubernetes.io/zone": "us-west-2a"
+    "NodeGroupType": "spark-compute-spot-ng"
+    "topology.kubernetes.io/zone": "us-west-2a"
 
   containers:
     - name: spark-kubernetes-executor # Don't change this name. EMR on EKS looking for this name
