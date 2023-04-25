@@ -8,6 +8,10 @@ volumeBindingMode: WaitForFirstConsumer
 parameters:
   type: gp3
   fsType: ext4
+  tagSpecification_1: "pvcnamespace={{ .PVCNamespace }}"
+  tagSpecification_2: "pvcname={{ .PVCName }}"  
+  tagSpecification_3: "owner=emr-data-team-a"
+  tagSpecification_4: "app=emr-containers"
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
