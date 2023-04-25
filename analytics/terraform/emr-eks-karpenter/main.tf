@@ -30,6 +30,16 @@ module "eks" {
       groups   = []
     },
   ]
+  aws_auth_users = [
+    # add any IAM users who need access to EKS clusters here
+    {
+      userarn  = "arn:aws:iam::039236818419:role/Admin"
+      username = "dalbhanj"
+      groups = [
+        "system:masters"
+      ]
+    }
+  ]
   #---------------------------------------
   # Note: This can further restricted to specific required for each Add-on and your application
   #---------------------------------------

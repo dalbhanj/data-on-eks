@@ -1,6 +1,7 @@
 import logging
 import sys
 from datetime import datetime
+import time 
 
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import *
@@ -49,7 +50,7 @@ def main(args):
 
     logger.info("Write New York Taxi data to S3 transform table")
     final_ny_taxi_df.repartition(2).write.mode("overwrite").parquet(transform_output_folder)
-
+    time.sleep(1200)
     logger.info("Ending spark application")
     # end spark code
     spark.stop()
